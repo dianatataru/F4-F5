@@ -1,0 +1,80 @@
+#!/bin/sh
+#SBATCH --job-name=PoPool2
+#SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
+#SBATCH --mail-user=dtataru@tulane.edu
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/output/output1.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/error/error1.err
+#SBATCH --qos=long
+#SBATCH --time=7-00:00:00
+#SBATCH --cpus-per-task=20   #: Cpus per Task
+#SBATCH --nodes=1            #: Number of Nodes
+#SBATCH --ntasks-per-node=1  #: Number of Tasks per Node
+
+#### load modules here
+module load samtools/1.10
+module load bwa/0.7.15
+module load java-openjdk/1.8.0
+module load R/3.1.2
+module load popoolation2/1201
+
+<<Popoolation2
+This script uses the was written in summer 2023 by Diana Tataru. 
+It analyzes pool-seq bam files from our pipeline Step 3 using the
+PoPoolation2 program (https://sourceforge.net/p/popoolation2/wiki/Tutorial/).
+
+output pileup files will have the following format:
+col1: reference contig
+col2: position within the refernce contig
+col3: reference character
+col4: allele frequencies of population number 1
+col5: allele frequencies of population number 2
+coln: allele frequencies of population number n
+
+Popoolation2
+
+#################################################################################################
+echo "Start Job"
+
+cd /lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_untrimmed/
+
+### CREATE PILEUP ###
+# creates a pilleup file for input in PoPoolation2 using bam files. 
+# This file will contain allele frequencies for every population at every base in the ref genome in concise format.
+echo "create pileup"
+samtools mpileup -B DT_01/DT_01_markdup.bam DT_02/DT_02_markdup.bam DT_03/DT_03_markdup.bam DT_04/DT_04_markdup.bam> allp.mpileup
+perl <popoolation2-path>/mpileup2sync.pl --fastq-type sanger --min-qual 20 --input allp.mpileup --output allp.sync
+
+# synchronize pileup
+echo "sync pileup"
+java -ea -Xmx7g -jar <popoolation2-path>/mpileup2sync.jar --input allp.mpileup --output allp_java.sync --fastq-type sanger --min-qual 20 --threads 8
+
+### CALCULATE ALLELE FREQ DIFFERENCES ###
+# creates two output files having two different extensions:
+# 1._rc: this file contains the major and minor alleles for every SNP in a concise format
+# 2._pwc: this file contains the differences in allele frequencies for every pairwise comparision of the populations present in the synchronized file
+echo "calculate allele freq diff"
+perl <popoolation2-path>/snp-frequency-diff.pl --input allp.sync --output-prefix allp --min-count 6 --min-coverage 50 --max-coverage 200
+
+### Calculate Fst values using a sliding window approach ###
+echo "calculate Fst"
+perl <popoolation2-path>/fst-sliding.pl --input allp.sync --output allp_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 200
+
+#To load Fst-values into IGV first index the two bam files
+samtools index DT_01/DT_01_markdup.bam
+samtools index DT_02/DT_02_markdup.bam
+samtools index DT_03/DT_03_markdup.bam
+samtools index DT_04/DT_04_markdup.bam
+
+#Than convert the file containing the Fst-values into the .igv format
+perl <popoolation2-path>/export/pwc2igv.pl --input allp.fst --output allp.igv
+
+### Fisher's Exact Test ###
+# estimate the significance of allele frequency differences
+echo "Fisher's exact test"
+perl <popoolation2-path>/fisher-test.pl --input allp.sync --output allp.fet --min-count 6 --min-coverage 50 --max-coverage 200 --suppress-noninformative
+
+#Convert the Fisher's exact test results into the .igv file format,start the IGV, load the .bam alignments and the file: allp_fet.igv. 
+perl <popoolation2-path>/export/pwc2igv.pl --input allp.fet --output allp_fet.igv
+
+module purge
+echo "End Job"
