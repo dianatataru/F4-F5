@@ -2,10 +2,10 @@
 #SBATCH --job-name=PoPool2
 #SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
 #SBATCH --mail-user=dtataru@tulane.edu
-#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/output/output1.out
-#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/error/error1.err
-#SBATCH --qos=long
-#SBATCH --time=7-00:00:00
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/output/output2.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/Popool2/error/error2.err
+#SBATCH --qos=normal
+#SBATCH --time=0-24:00:00
 #SBATCH --cpus-per-task=20   #: Cpus per Task
 #SBATCH --nodes=1            #: Number of Nodes
 #SBATCH --ntasks-per-node=1  #: Number of Tasks per Node
@@ -41,23 +41,23 @@ cd /lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_u
 # creates a pilleup file for input in PoPoolation2 using bam files. 
 # This file will contain allele frequencies for every population at every base in the ref genome in concise format.
 echo "create pileup"
-samtools mpileup -B DT_01/DT_01_markdup.bam DT_02/DT_02_markdup.bam DT_03/DT_03_markdup.bam DT_04/DT_04_markdup.bam> allp.mpileup
-perl <popoolation2-path>/mpileup2sync.pl --fastq-type sanger --min-qual 20 --input allp.mpileup --output allp.sync
+#samtools mpileup -B DT_01/DT_01_markdup.bam DT_02/DT_02_markdup.bam DT_03/DT_03_markdup.bam DT_04/DT_04_markdup.bam> allp.mpileup
+perl $POPOOLATION2_PATH/mpileup2sync.pl --fastq-type sanger --min-qual 20 --input allp.mpileup --output allp.sync
 
 # synchronize pileup
 echo "sync pileup"
-java -ea -Xmx7g -jar <popoolation2-path>/mpileup2sync.jar --input allp.mpileup --output allp_java.sync --fastq-type sanger --min-qual 20 --threads 8
+java -ea -Xmx7g -jar $POPOOLATION2_PATH/mpileup2sync.jar --input allp.mpileup --output allp_java.sync --fastq-type sanger --min-qual 20 --threads 8
 
 ### CALCULATE ALLELE FREQ DIFFERENCES ###
 # creates two output files having two different extensions:
 # 1._rc: this file contains the major and minor alleles for every SNP in a concise format
 # 2._pwc: this file contains the differences in allele frequencies for every pairwise comparision of the populations present in the synchronized file
 echo "calculate allele freq diff"
-perl <popoolation2-path>/snp-frequency-diff.pl --input allp.sync --output-prefix allp --min-count 6 --min-coverage 50 --max-coverage 200
+perl $POPOOLATION2_PATH/snp-frequency-diff.pl --input allp.sync --output-prefix allp --min-count 6 --min-coverage 50 --max-coverage 200
 
 ### Calculate Fst values using a sliding window approach ###
 echo "calculate Fst"
-perl <popoolation2-path>/fst-sliding.pl --input allp.sync --output allp_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 200
+perl $POPOOLATION2_PATH/fst-sliding.pl --input allp.sync --output allp_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 200
 
 #To load Fst-values into IGV first index the two bam files
 samtools index DT_01/DT_01_markdup.bam
@@ -66,15 +66,15 @@ samtools index DT_03/DT_03_markdup.bam
 samtools index DT_04/DT_04_markdup.bam
 
 #Than convert the file containing the Fst-values into the .igv format
-perl <popoolation2-path>/export/pwc2igv.pl --input allp.fst --output allp.igv
+perl $POPOOLATION2_PATH/export/pwc2igv.pl --input allp.fst --output allp.igv
 
 ### Fisher's Exact Test ###
 # estimate the significance of allele frequency differences
 echo "Fisher's exact test"
-perl <popoolation2-path>/fisher-test.pl --input allp.sync --output allp.fet --min-count 6 --min-coverage 50 --max-coverage 200 --suppress-noninformative
+perl $POPOOLATION2_PATH/fisher-test.pl --input allp.sync --output allp.fet --min-count 6 --min-coverage 50 --max-coverage 200 --suppress-noninformative
 
 #Convert the Fisher's exact test results into the .igv file format,start the IGV, load the .bam alignments and the file: allp_fet.igv. 
-perl <popoolation2-path>/export/pwc2igv.pl --input allp.fet --output allp_fet.igv
+perl $POPOOLATION2_PATH/export/pwc2igv.pl --input allp.fet --output allp_fet.igv
 
 module purge
 echo "End Job"
