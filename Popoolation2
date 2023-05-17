@@ -57,7 +57,7 @@ perl $POPOOLATION2_PATH/snp-frequency-diff.pl --input allp.sync --output-prefix 
 
 ### Calculate Fst values using a sliding window approach ###
 echo "calculate Fst"
-perl $POPOOLATION2_PATH/fst-sliding.pl --input allp.sync --output allp_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 200
+perl $POPOOLATION2_PATH/fst-sliding.pl --input allp.sync --output allp_w500.fst --min-count 6 --min-coverage 50 --max-coverage 200 --min-covered-fraction 1 --window-size 500 --step-size 500 --pool-size 500
 
 #To load Fst-values into IGV first index the two bam files
 samtools index DT_01/DT_01_markdup.bam
@@ -66,7 +66,7 @@ samtools index DT_03/DT_03_markdup.bam
 samtools index DT_04/DT_04_markdup.bam
 
 #Than convert the file containing the Fst-values into the .igv format
-perl $POPOOLATION2_PATH/export/pwc2igv.pl --input allp.fst --output allp.igv
+perl $POPOOLATION2_PATH/export/pwc2igv.pl --input allp_w500.fst --output allp.igv
 
 ### Fisher's Exact Test ###
 # estimate the significance of allele frequency differences
