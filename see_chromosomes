@@ -1,0 +1,37 @@
+#!/bin/sh
+#SBATCH --job-name=see_chr
+#SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
+#SBATCH --mail-user=dtataru@tulane.edu
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/see_chr_output.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/see_chr_error.err
+#SBATCH --qos=normal
+#SBATCH --time=0-24:00:00
+#SBATCH --cpus-per-task=20   #: Cpus per Task
+#SBATCH --nodes=1            #: Number of Nodes
+#SBATCH --ntasks-per-node=1  #: Number of Tasks per Node
+
+#### load modules here
+module load bcftools/1.16
+module load htslib/1.13
+
+This script was written in fall 2023 by Diana Tataru. 
+It is not necessary for the poopulation (or any) pipeline, but is for troubleshooting incomplete .mpileup files
+It takes the Popoolation2 mpileup file created, gzips it, and tells you all of the chromosomes in it. 
+
+#################################################################################################
+echo "Start Job"
+
+cd /lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_untrimmed/
+
+#zip the mpileup file
+bgzip -c allp.mpileup > allp.mpileup.gz
+
+#index the file
+samtools index allp.mpileup.gz
+
+#find the number of chromosomes in it 
+samtools idxstats allp.mpileup.gz
+
+
+module purge
+echo "end job"
