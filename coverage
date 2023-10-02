@@ -1,0 +1,33 @@
+#!/bin/sh
+#SBATCH --job-name=coverage
+#SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
+#SBATCH --mail-user=dtataru@tulane.edu
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_untrimmed/coverage.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_untrimmed/coverage.err
+#SBATCH --qos=normal
+#SBATCH --time=0-24:00:00
+#SBATCH --cpus-per-task=20   #: Cpus per Task
+#SBATCH --nodes=1            #: Number of Nodes
+#SBATCH --ntasks-per-node=1  #: Number of Tasks per Node
+
+#### load modules here
+module load samtools/1.10
+module load htslib/1.13
+
+This script was written in fall 2023 by Diana Tataru. 
+It tells you the coverage of input bam files. If you have a lot of files you can make a list and include it as an input on the coverage command. 
+Full manual here: http://www.htslib.org/doc/samtools-coverage.html
+
+#################################################################################################
+echo "Start Job"
+
+cd /lustre/project/kferris/Diana_Tataru/F4_F5/3_F4_F5pre-processing/alignments_untrimmed/
+
+samtools coverage DT_01/DT_01_aln_pe_fm_sorted.bam -q 20 -o 1.coverage
+samtools coverage DT_02/DT_02_aln_pe_fm_sorted.bam -q 20 -o 2.coverage
+samtools coverage DT_03/DT_03_aln_pe_fm_sorted.bam -q 20 -o 3.coverage
+samtools coverage DT_04/DT_04_aln_pe_fm_sorted.bam -q 20 -o 4.coverage
+
+
+module purge
+echo "End Job"
