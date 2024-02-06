@@ -2,8 +2,8 @@
 #SBATCH --job-name=consensus
 #SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
 #SBATCH --mail-user=dtataru@tulane.edu
-#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/4_parental_lac/consensus2.out
-#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/4_parental_lac/consensus2.err
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/lac_nas_gut/4_lac/consensus.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/lac_nas_gut/4_lac/consensus.err
 #SBATCH --qos=normal
 #SBATCH --time=24:00:00
 #SBATCH --cpus-per-task=20   #: Cpus per Task
