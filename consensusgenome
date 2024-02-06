@@ -1,0 +1,40 @@
+#!/bin/bash
+#SBATCH --job-name=consensus
+#SBATCH --mail-type=ALL # Valid values: BEGIN, END, FAIL, REQUEUE and ALL.
+#SBATCH --mail-user=dtataru@tulane.edu
+#SBATCH --output=/lustre/project/kferris/Diana_Tataru/F4_F5/4_parental_lac/consensus2.out
+#SBATCH --error=/lustre/project/kferris/Diana_Tataru/F4_F5/4_parental_lac/consensus2.err
+#SBATCH --qos=normal
+#SBATCH --time=24:00:00
+#SBATCH --cpus-per-task=20   #: Cpus per Task
+#SBATCH --nodes=1            #: Number of Nodes
+#SBATCH --ntasks-per-node=1  #: Number of Tasks per Node
+
+#This script uses a reference sequence "reference.fa" in the fasta format and an indexed VCF with the variants calls.bcf. 
+#This variant file needs to be zipped to create a zipped vcf file and then used tabix to index this file.
+#Then called bctools consensus to create the reference fasta for each species.
+
+echo "Start Job"
+
+#load modules
+module load bcftools/1.16
+module load samtools/1.5
+
+#Navigate
+cd /lustre/project/kferris/Diana_Tataru/lac_nas_gut/4_lac/1_GVCF_files
+
+##main loop##
+
+#iterate through files
+for i in *.gz; do bcftools consensus -f /lustre/project/kferris/MimulusGuttatus_reference/MguttatusTOL_551_v5.0.fa $i > ${i}.fasta; done
+#zip the files to prepare as input
+for i in *.vcf; do bgzip -c $i > ${i}.gz; done
+#index using tabix
+for i in *.vcf.gz; do tabix -p vcf $i; done
+#build consensus
+for i in *.gz; do bcftools consensus -f /lustre/project/kferris/MimulusGuttatus_reference/MguttatusTOL_551_v5.0.fa $i > ${i}.fasta; done
+```
+
+echo "End Job"
+
+module purge
